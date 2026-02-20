@@ -1,6 +1,7 @@
 import { Task } from "./task.model"
 import { CreateTaskDTO, TaskStatus, UpdateTaskDTO } from "./tasks.types"
 import { AppError } from "../../errors/AppError"
+import axios from "axios"
 
 export const tasksService = {
   getTasks: async (ownerId: string) => {
@@ -21,6 +22,7 @@ export const tasksService = {
     taskId: string,
     updateData: UpdateTaskDTO
   ) => {
+
     const task = await Task.findOne({ _id: taskId, ownerId })
 
     if (!task) {
@@ -31,7 +33,15 @@ export const tasksService = {
       throw new AppError("Archived tasks cannot be modified", 400)
     }
 
+    if (updateData.status === TaskStatus.DONE) {
+      throw new AppError(
+        "Use the complete endpoint to mark task as DONE",
+        400
+      )
+    }
+
     if (updateData.status !== undefined) {
+
       if (updateData.status === task.status) {
         throw new AppError(
           `Task is already in ${task.status} status`,
@@ -41,7 +51,7 @@ export const tasksService = {
 
       const validTransitions: Record<TaskStatus, TaskStatus[]> = {
         PENDING: [TaskStatus.IN_PROGRESS],
-        IN_PROGRESS: [TaskStatus.DONE],
+        IN_PROGRESS: [],
         DONE: [TaskStatus.ARCHIVED],
         ARCHIVED: []
       }
@@ -78,6 +88,38 @@ export const tasksService = {
       task.status = updateData.status
     }
 
+    await task.save()
+
+    return task
+  },
+  completeTask: async (ownerId: string, taskId: string) => {
+
+    const task = await Task.findOne({ _id: taskId, ownerId })
+
+    if (!task) {
+      throw new AppError("Task not found", 404)
+    }
+
+    if (task.status !== TaskStatus.IN_PROGRESS) {
+      throw new AppError(
+        "Task must be IN_PROGRESS to be marked as DONE",
+        400
+      )
+    }
+
+    const response = await axios.post(
+      "http://localhost:4000/complete",
+      { taskId }
+    )
+
+    if (!response.data.approved) {
+      throw new AppError(
+        "Task completion rejected by external service",
+        400
+      )
+    }
+
+    task.status = TaskStatus.DONE
     await task.save()
 
     return task
