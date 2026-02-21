@@ -22,7 +22,9 @@ export const tasksService = {
     taskId: string,
     updateData: UpdateTaskDTO
   ) => {
-
+    if (!updateData.title && !updateData.description) {
+      throw new AppError("At least one field must be updated", 400)
+    }
     const task = await Task.findOne({ _id: taskId, ownerId })
 
     if (!task) {

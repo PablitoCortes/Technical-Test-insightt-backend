@@ -10,12 +10,12 @@ describe("TasksService", () => {
   const mockOwnerId = "user123";
   const mockTaskId = "task123";
 
-  describe("updateTask", () => {
+  describe("editTask", () => {
     it("should throw error if task is not found", async () => {
       (Task.findOne as jest.Mock).mockResolvedValue(null);
 
       await expect(
-        tasksService.updateTask(mockOwnerId, mockTaskId, { title: "New Title" })
+        tasksService.editTask(mockOwnerId, mockTaskId, { title: "New Title" })
       ).rejects.toThrow(new AppError("Task not found", 404));
     });
 
@@ -24,7 +24,7 @@ describe("TasksService", () => {
       (Task.findOne as jest.Mock).mockResolvedValue(mockTask);
 
       await expect(
-        tasksService.updateTask(mockOwnerId, mockTaskId, { status: TaskStatus.DONE })
+        tasksService.editTask(mockOwnerId, mockTaskId, { status: TaskStatus.DONE })
       ).rejects.toThrow(new AppError("Use the complete endpoint to mark task as DONE", 400));
     });
 
@@ -33,7 +33,7 @@ describe("TasksService", () => {
       (Task.findOne as jest.Mock).mockResolvedValue(mockTask);
 
       await expect(
-        tasksService.updateTask(mockOwnerId, mockTaskId, { title: "New Title" })
+        tasksService.editTask(mockOwnerId, mockTaskId, { title: "New Title" })
       ).rejects.toThrow(new AppError("Archived tasks cannot be modified", 400));
     });
 
@@ -46,7 +46,7 @@ describe("TasksService", () => {
 
       // PENDING to DONE is invalid via update (and also logically invalid transition)
       await expect(
-        tasksService.updateTask(mockOwnerId, mockTaskId, { status: TaskStatus.ARCHIVED })
+        tasksService.editTask(mockOwnerId, mockTaskId, { status: TaskStatus.ARCHIVED })
       ).rejects.toThrow(/Invalid status transition/);
     });
 
@@ -59,13 +59,13 @@ describe("TasksService", () => {
       (Task.findOne as jest.Mock).mockResolvedValue(mockTask);
 
       // Should succeed
-      await tasksService.updateTask(mockOwnerId, mockTaskId, { title: "Fix typo" });
+      await tasksService.editTask(mockOwnerId, mockTaskId, { title: "Fix typo" });
       expect(mockTask.title).toBe("Fix typo");
       expect(mockTask.save).toHaveBeenCalled();
 
       // Should fail if changing description
       await expect(
-        tasksService.updateTask(mockOwnerId, mockTaskId, { description: "New desc" })
+        tasksService.editTask(mockOwnerId, mockTaskId, { description: "New desc" })
       ).rejects.toThrow(new AppError("Only title can be edited for completed tasks", 400));
     });
   });
