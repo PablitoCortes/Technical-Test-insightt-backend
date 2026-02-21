@@ -1,11 +1,9 @@
-import express from "express"
-
+import express, { Request, Response } from "express"
 const app = express()
 app.use(express.json())
 
-app.post("/complete", (req, res) => {
+app.post("/complete", (req: Request, res: Response) => {
   const { taskId } = req.body
-
   return res.json({
     approved: true,
     taskId

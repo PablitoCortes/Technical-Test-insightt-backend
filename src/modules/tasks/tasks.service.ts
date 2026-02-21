@@ -17,7 +17,7 @@ export const tasksService = {
     })
   },
 
-  updateTask: async (
+  editTask: async (
     ownerId: string,
     taskId: string,
     updateData: UpdateTaskDTO
@@ -33,42 +33,8 @@ export const tasksService = {
       throw new AppError("Archived tasks cannot be modified", 400)
     }
 
-    if (updateData.status === TaskStatus.DONE) {
-      throw new AppError(
-        "Use the complete endpoint to mark task as DONE",
-        400
-      )
-    }
-
-    if (updateData.status !== undefined) {
-
-      if (updateData.status === task.status) {
-        throw new AppError(
-          `Task is already in ${task.status} status`,
-          400
-        )
-      }
-
-      const validTransitions: Record<TaskStatus, TaskStatus[]> = {
-        PENDING: [TaskStatus.IN_PROGRESS],
-        IN_PROGRESS: [],
-        DONE: [TaskStatus.ARCHIVED],
-        ARCHIVED: []
-      }
-
-      if (!validTransitions[task.status].includes(updateData.status)) {
-        throw new AppError(
-          `Invalid status transition from ${task.status} to ${updateData.status}`,
-          400
-        )
-      }
-    }
-
     if (task.status === TaskStatus.DONE) {
-      if (
-        updateData.description !== undefined ||
-        updateData.status !== undefined
-      ) {
+      if (updateData.description !== undefined) {
         throw new AppError(
           "Only title can be edited for completed tasks",
           400
@@ -84,15 +50,62 @@ export const tasksService = {
       task.description = updateData.description
     }
 
-    if (updateData.status !== undefined) {
-      task.status = updateData.status
-    }
-
     await task.save()
 
     return task
   },
-  completeTask: async (ownerId: string, taskId: string) => {
+
+  moveTask: async (
+    ownerId: string,
+    taskId: string,
+    newStatus: TaskStatus
+  ) => {
+
+    const task = await Task.findOne({ _id: taskId, ownerId })
+
+    if (!task) {
+      throw new AppError("Task not found", 404)
+    }
+
+    if (task.status === TaskStatus.ARCHIVED) {
+      throw new AppError("Archived tasks cannot be moved", 400)
+    }
+
+    if (newStatus === TaskStatus.DONE) {
+      throw new AppError(
+        "Use the complete endpoint to mark task as DONE",
+        400
+      )
+    }
+
+    if (newStatus === task.status) {
+      throw new AppError(
+        `Task is already in ${task.status} status`,
+        400
+      )
+    }
+
+    const validTransitions: Record<TaskStatus, TaskStatus[]> = {
+      PENDING: [TaskStatus.IN_PROGRESS],
+      IN_PROGRESS: [],
+      DONE: [TaskStatus.ARCHIVED],
+      ARCHIVED: []
+    }
+
+    if (!validTransitions[task.status].includes(newStatus)) {
+      throw new AppError(
+        `Invalid status transition from ${task.status} to ${newStatus}`,
+        400
+      )
+    }
+
+    task.status = newStatus
+    await task.save()
+
+    return task
+  },
+
+  markAsDone: async (ownerId: string, taskId: string) => {
 
     const task = await Task.findOne({ _id: taskId, ownerId })
 

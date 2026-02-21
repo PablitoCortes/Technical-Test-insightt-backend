@@ -24,8 +24,12 @@ The API enforces strict rules for task management:
 *   **Immutability**: Once a task is marked as `DONE`, only the `title` can be modified (for typo fixes). Other fields become read-only.
 *   **External Verification**: Marking a task as `DONE` requires approval from an external **Completion Service** via a web service call.
 
-### 3. Integrated Completion Service
-A secondary microservice simulates an external validation gate. The main API communicates with this service before allowing a task to reach the `DONE` status.
+### 3. Integrated Completion Service (External Validation)
+A secondary microservice, located in `src/completion-service`, acts as an external validation gate. This simulates a real-world scenario where a task completion must be authorized by a separate business unit or a Cloud Function.
+
+*   **Port**: 4000
+*   **Interaction**: When a user hits the `/markAsDone` endpoint on the main API (Port 3000), the backend makes an internal HTTP request to the Completion Service (Port 4000) to get an "Approved" flag.
+*   **Requirement Fit**: This implements the requirement for "Marking a task as Done using an API web service".
 
 ### 4. Automatic Testing
 Comprehensive unit tests cover the core business logic, including:

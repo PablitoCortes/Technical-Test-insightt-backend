@@ -47,7 +47,7 @@ export const taskController = {
     }
   },
 
-  updateTask: async (
+  editTask: async (
     req: Request<{ id: string }>,
     res: Response) => {
     if (!req.auth) {
@@ -56,13 +56,12 @@ export const taskController = {
 
     const userId = req.auth.payload.sub as string
     try {
-      const task = await tasksService.updateTask(
+      const task = await tasksService.editTask(
         userId,
         req.params.id,
         req.body
       )
-
-      return sendResponse(res, 200, "Task updated successfully", task)
+      return sendResponse(res, 200, "Task edited successfully", task)
     } catch (error) {
       if (error instanceof AppError) {
         return sendError(res, error.statusCode, error.message)
@@ -72,7 +71,7 @@ export const taskController = {
     }
   },
 
-  completeTask: async (
+  moveTask: async (
     req: Request<{ id: string }>,
     res: Response) => {
     if (!req.auth) {
@@ -81,8 +80,28 @@ export const taskController = {
 
     const userId = req.auth.payload.sub as string
     try {
-      const task = await tasksService.completeTask(userId, req.params.id)
-      return sendResponse(res, 200, "Task completed successfully", task)
+      const task = await tasksService.moveTask(userId, req.params.id, req.body.status)
+      return sendResponse(res, 200, "Task moved successfully", task)
+    } catch (error) {
+      if (error instanceof AppError) {
+        return sendError(res, error.statusCode, error.message)
+      }
+
+      return sendError(res, 500, "Internal server error")
+    }
+  },
+
+  markAsDone: async (
+    req: Request<{ id: string }>,
+    res: Response) => {
+    if (!req.auth) {
+      return sendError(res, 401, "Unauthorized")
+    }
+
+    const userId = req.auth.payload.sub as string
+    try {
+      const task = await tasksService.markAsDone(userId, req.params.id)
+      return sendResponse(res, 200, "Task marked as done successfully", task)
     } catch (error) {
       if (error instanceof AppError) {
         return sendError(res, error.statusCode, error.message)
