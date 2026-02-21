@@ -113,6 +113,9 @@ export const tasksService = {
     if (!task) {
       throw new AppError("Task not found", 404);
     }
+    if (task.status === TaskStatus.DONE) {
+      return task;
+    }
 
     if (task.status !== TaskStatus.IN_PROGRESS) {
       throw new AppError("Task must be IN_PROGRESS to be marked as DONE", 400);
