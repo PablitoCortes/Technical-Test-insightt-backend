@@ -22,13 +22,14 @@ export const tasksService = {
     taskId: string,
     updateData: UpdateTaskDTO
   ) => {
-    if (!updateData.title && !updateData.description) {
-      throw new AppError("At least one field must be updated", 400)
-    }
     const task = await Task.findOne({ _id: taskId, ownerId })
 
     if (!task) {
       throw new AppError("Task not found", 404)
+    }
+
+    if (updateData.status === TaskStatus.DONE && task.status !== TaskStatus.DONE) {
+      throw new AppError("Use the complete endpoint to mark task as DONE", 400)
     }
 
     if (task.status === TaskStatus.ARCHIVED) {
@@ -36,12 +37,35 @@ export const tasksService = {
     }
 
     if (task.status === TaskStatus.DONE) {
-      if (updateData.description !== undefined) {
+      const isDescriptionChanging = updateData.description !== undefined && updateData.description !== task.description
+      const isStatusChanging = updateData.status !== undefined && updateData.status !== (task.status as TaskStatus)
+
+      if (isDescriptionChanging || isStatusChanging) {
         throw new AppError(
           "Only title can be edited for completed tasks",
           400
         )
       }
+    }
+
+    if (!updateData.title && !updateData.description && !updateData.status) {
+      throw new AppError("At least one field must be updated", 400)
+    }
+    if (updateData.status && updateData.status !== task.status) {
+      const validTransitions: Record<TaskStatus, TaskStatus[]> = {
+        PENDING: [TaskStatus.IN_PROGRESS],
+        IN_PROGRESS: [], // IN_PROGRESS can only move to DONE via markAsDone
+        DONE: [TaskStatus.ARCHIVED],
+        ARCHIVED: []
+      }
+
+      if (!validTransitions[task.status].includes(updateData.status)) {
+        throw new AppError(
+          `Invalid status transition from ${task.status} to ${updateData.status}`,
+          400
+        )
+      }
+      task.status = updateData.status
     }
 
     if (updateData.title !== undefined) {
