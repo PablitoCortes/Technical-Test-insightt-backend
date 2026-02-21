@@ -55,6 +55,7 @@ Comprehensive unit tests cover the core business logic, including:
     ```env
     PORT=3000
     MONGO_DB_URI=your_mongodb_connection_string
+    FRONTEND_URL=http://localhost:5173
     # Auth0 configuration is handled in src/middleware/authMiddleware.ts
     ```
 
