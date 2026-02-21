@@ -2,7 +2,6 @@ import { Request, Response } from "express"
 import { tasksService } from "./tasks.service"
 import { sendResponse, sendError } from "../../middleware/ApiResponse"
 import { AppError } from "../../errors/AppError"
-import { AuthResult } from "express-oauth2-jwt-bearer"
 
 export const taskController = {
 
@@ -36,6 +35,12 @@ export const taskController = {
 
     const userId = req.auth.payload.sub as string
     try {
+      if (!req.body.title) {
+        return sendError(res, 400, "Title is required")
+      }
+      if (req.body.title.length < 4) {
+        return sendError(res, 400, "Title must be at least 4 characters long")
+      }
       const task = await tasksService.createTask(userId, req.body)
       return sendResponse(res, 201, "Task created successfully", task)
     } catch (error) {

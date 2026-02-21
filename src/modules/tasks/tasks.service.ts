@@ -1,7 +1,7 @@
 import { Task } from "./task.model"
 import { CreateTaskDTO, TaskStatus, UpdateTaskDTO } from "./tasks.types"
 import { AppError } from "../../errors/AppError"
-import axios from "axios"
+import axios, { AxiosError } from "axios"
 
 export const tasksService = {
   getTasks: async (ownerId: string) => {
@@ -106,38 +106,34 @@ export const tasksService = {
   },
 
   markAsDone: async (ownerId: string, taskId: string) => {
-
-    const task = await Task.findOne({ _id: taskId, ownerId })
+    const task = await Task.findOne({ _id: taskId, ownerId });
 
     if (!task) {
-      throw new AppError("Task not found", 404)
+      throw new AppError("Task not found", 404);
     }
 
     if (task.status !== TaskStatus.IN_PROGRESS) {
-      throw new AppError(
-        "Task must be IN_PROGRESS to be marked as DONE",
-        400
-      )
+      throw new AppError("Task must be IN_PROGRESS to be marked as DONE", 400);
     }
 
-    const response = await axios.post(
-      "http://localhost:4000/complete",
-      { taskId }
-    )
+    try {
+      const response = await axios.post("http://localhost:4000/complete", { taskId });
 
-    if (!response.data.approved) {
-      throw new AppError(
-        "Task completion rejected by external service",
-        400
-      )
+      if (!response.data.approved) {
+        throw new AppError("Task completion rejected by external service", 400);
+      }
+    } catch (error) {
+      if (error instanceof AxiosError) {
+        throw new AppError("External service unavailable", 503);
+      }
+      throw new AppError("Unexpected error contacting external service", 500);
     }
 
-    task.status = TaskStatus.DONE
-    await task.save()
+    task.status = TaskStatus.DONE;
+    await task.save();
 
-    return task
+    return task;
   },
-
   deleteTask: async (ownerId: string, taskId: string) => {
     const task = await Task.findById(taskId)
 

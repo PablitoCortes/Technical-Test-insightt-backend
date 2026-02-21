@@ -10,7 +10,7 @@ taskRouter.get("/tasks", taskController.getTasks)
 taskRouter.post("/tasks", taskController.createTask)
 taskRouter.put("/tasks/:id", taskController.editTask)
 taskRouter.put("/tasks/:id/move", taskController.moveTask)
-taskRouter.put("/tasks/:id/markAsDone", taskController.markAsDone)
+taskRouter.put("/tasks/:id/mark-as-done", taskController.markAsDone)
 taskRouter.delete("/tasks/:id", taskController.deleteTask)
 
 export default taskRouter
